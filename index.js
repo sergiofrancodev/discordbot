@@ -1,4 +1,4 @@
-// index.js
+
 import 'dotenv/config';
 import { Client, GatewayIntentBits } from 'discord.js';
 import { OpenAI } from 'openai';
@@ -36,14 +36,12 @@ client.on('messageCreate', async (message) => {
 
     if (/^https?:\/\/\S+$/.test(text)) return;
 
-    // Skip pure unicode emoji
     if (/^\p{Extended_Pictographic}+$/u.test(text)) return;
 
     if (/^:\w+?:$/.test(text) || /^<a?:\w+:\d+>$/.test(text)) return;
 
     let code = franc(text, { minLength: 3, only: ['eng','spa','kor'] });
     if (!['eng','spa','kor'].includes(code)) {
-        // Fallback to ChatGPT for better detection
         try {
             const detect = await openai.chat.completions.create({
                 model: 'gpt-3.5-turbo',
