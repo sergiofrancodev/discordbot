@@ -3,114 +3,86 @@
 
   <h1>Discord Translator Bot</h1>
   <p>
-    A simple Discord bot that uses OpenAI’s <code>gpt-3.5-turbo</code> to detect and translate messages
-    between English, Spanish and Korean—automatically, in all channels of your server.
+    This little bot sits in your server and automatically translates every message between
+    English, Spanish and Korean. Under the hood it uses OpenAI’s GPT-3.5-turbo, but you
+    don’t need to do anything—just invite it and let it run.
   </p>
 
-  <h2>Features</h2>
+  <h2>How It Works</h2>
   <ul>
-    <li>Automatic translation of every user message (no slash commands).</li>
-    <li>Supports English, Spanish and Korean out of the box.</li>
-    <li>Emoji-based output: 🦅 for English, 🇪🇸 for Spanish, 🇰🇷 for Korean.</li>
-    <li>Smart detection: <code>franc</code> whitelist + GPT fallback for mixed text.</li>
-    <li>Ignores pure-emoji or pure-link messages.</li>
-    <li>Strict translation mode: returns only JSON → avoids Q&A or extras.</li>
+    <li>Watches every message in all channels of your server.</li>
+    <li>Detects the language (English, Spanish or Korean).</li>
+    <li>Replies with translations into the other two languages.</li>
+    <li>Ignores messages that are only emojis or links.</li>
   </ul>
 
   <hr>
 
-  <h2>Getting Started</h2>
-
-  <h3>Prerequisites</h3>
-  <ul>
-    <li>Node.js v16+</li>
-    <li>An OpenAI API key</li>
-    <li>A Discord bot with <strong>Message Content Intent</strong> enabled</li>
-    <li>Your Discord server ID</li>
-  </ul>
-
-  <h3>Installation</h3>
-  <ol>
-    <li>
-      <strong>Clone the repo:</strong><br>
-      <pre><code>git clone https://github.com/sergiofrancodev/discordbot.git
+  <h2>Setup</h2>
+  <h3>1. Clone the repo</h3>
+  <pre><code>git clone https://github.com/sergiofrancodev/discordbot.git
 cd discordbot</code></pre>
-    </li>
-    <li>
-      <strong>Install dependencies:</strong><br>
-      <pre><code>npm install</code></pre>
-    </li>
-    <li>
-      <strong>Create your <code>.env</code> file:</strong><br>
-      <pre><code>DISCORD_TOKEN=sk-…
-OPENAI_API_KEY=sk-…
+
+  <h3>2. Install dependencies</h3>
+  <pre><code>npm install</code></pre>
+
+  <h3>3. Create your <code>.env</code> file</h3>
+  <p>In the project root, make a file named <code>.env</code> with these three lines:</p>
+  <pre><code>DISCORD_TOKEN=sk-…your_bot_token…
+OPENAI_API_KEY=sk-…your_openai_key…
 SERVER_ID=123456789012345678</code></pre>
-    </li>
-    <li>
-      <strong>Run locally:</strong><br>
-      <pre><code>npm start</code></pre>
-      You should see <code>🤖 Bot connected as …</code> in console.
-    </li>
-  </ol>
+  <p>• <strong>DISCORD_TOKEN</strong>: your bot’s token from the Discord Developer Portal.<br>
+     • <strong>OPENAI_API_KEY</strong>: your secret key from OpenAI.<br>
+     • <strong>SERVER_ID</strong>: right-click your server icon in Discord, “Copy ID”.</p>
+
+  <h3>4. Run locally</h3>
+  <pre><code>npm start</code></pre>
+  <p>You should see <code>🤖 Bot connected as …</code> in your terminal.</p>
 
   <hr>
 
-  <h2>Deployment with PM2</h2>
+  <h2>Deployment</h2>
+  <p>We recommend <code>pm2</code> for production:</p>
   <ol>
     <li><code>npm install -g pm2</code></li>
     <li><code>pm2 start index.js --name translator-bot --update-env</code></li>
-    <li><code>pm2 save</code></li>
-    <li><code>pm2 startup systemd</code> (follow printed instructions)</li>
+    <li><code>pm2 save</code> and then <code>pm2 startup</code> (follow the printed instructions)</li>
   </ol>
-  <p>Check logs with <code>pm2 logs translator-bot --lines 20</code>.</p>
+  <p>Check its status with <code>pm2 list</code> and tail logs via <code>pm2 logs translator-bot</code>.</p>
 
   <hr>
 
-  <h2>Configuration</h2>
-  <ul>
-    <li><strong>DISCORD_TOKEN</strong>: Your bot token</li>
-    <li><strong>OPENAI_API_KEY</strong>: Your OpenAI key</li>
-    <li><strong>SERVER_ID</strong>: Your Discord server ID</li>
-  </ul>
-
-  <hr>
-
-  <h2>Adding New Languages</h2>
-  <p>To support additional languages (e.g. French, German, Japanese):</p>
+  <h2>Adding More Languages</h2>
+  <p>You can extend the bot to support any language GPT understands:</p>
   <ol>
-    <li>
-      <strong>Expand the <code>franc</code> whitelist</strong> in <code>index.js</code>:
-      <pre><code>franc(text, { minLength: 3, only: ['eng','spa','kor','fra','deu','jpn'] })</code></pre>
+    <li>In <code>index.js</code>, where <code>franc</code> is called, add the new codes to the list:
+      <pre><code>franc(text, { minLength: 3, only: ['eng','spa','kor','fra','deu'] })</code></pre>
     </li>
-    <li>
-      <strong>Map new codes:</strong> Add entries in the <code>names</code> and <code>map</code> objects:
-      <pre><code>names.fra = 'French'; map.fra = 'fr';
-names.deu = 'German'; map.deu = 'de';</code></pre>
+    <li>Also add entries to <code>names</code> and <code>map</code>:
+      <pre><code>names.fra = 'French'; map.fra = 'fr';</code></pre>
     </li>
-    <li>
-      <strong>Include in your codes array:</strong>
-      <pre><code>const codes = ['eng','spa','kor','fra','deu','jpn'];</code></pre>
+    <li>Include the new codes in the <code>codes</code> array:
+      <pre><code>const codes = ['eng','spa','kor','fra','deu'];</code></pre>
     </li>
-    <li>
-      <strong>Add emojis or flags:</strong> In the reply builder:
-      <pre><code>if (data.fr) reply += `🇫🇷 ${data.fr}\n`;
-if (data.de) reply += `🇩🇪 ${data.de}\n`;</code></pre>
+    <li>Finally, pick an emoji or flag in the reply output:
+      <pre><code>if (data.fr) reply += `🇫🇷 ${data.fr}\n`;</code></pre>
     </li>
-    <li><strong>Deploy changes</strong> (push, pull, reinstall, restart PM2).</li>
   </ol>
+  <p>Then push, pull on your server, reinstall and restart <code>pm2</code>.</p>
 
   <hr>
 
   <h2>Troubleshooting</h2>
   <ul>
-    <li>No logs? Make sure <code>console.log</code> is present and <code>type: "module"</code> in <code>package.json</code>.</li>
-    <li>No message events? Enable <strong>Message Content Intent</strong> and check bot permissions.</li>
-    <li>Invalid JSON? Inspect the GPT prompt and response format.</li>
+    <li>If the bot doesn’t show as “connected”, confirm your <code>.env</code> values.</li>
+    <li>Enable “Message Content Intent” in the Discord Developer Portal.</li>
+    <li>Check that the bot’s role can read and send messages.</li>
+    <li>Any errors will show up in <code>pm2 logs translator-bot</code>.</li>
   </ul>
 
   <hr>
 
   <h2>License</h2>
-  <p>MIT © Your Name</p>
+  <p>MIT License — feel free to use, modify and share!</p>
 
 </body>
