@@ -1,4 +1,3 @@
-// index.js
 import 'dotenv/config';
 import { Client, GatewayIntentBits } from 'discord.js';
 import { OpenAI } from 'openai';
