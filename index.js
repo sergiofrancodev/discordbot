@@ -1,9 +1,9 @@
+// index.js
 import 'dotenv/config';
 import { Client, GatewayIntentBits } from 'discord.js';
 import { OpenAI } from 'openai';
 import { franc } from 'franc';
 
-// 1️⃣ Load environment variables
 const DISCORD_TOKEN  = process.env.DISCORD_TOKEN;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const SERVER_ID      = process.env.SERVER_ID;
@@ -34,6 +34,10 @@ client.on('messageCreate', async (message) => {
     const text = message.content.trim();
     if (!text) return;
 
+    if (/^https?:\/\/\S+$/.test(text)) return;
+
+    if (/^\p{Extended_Pictographic}+$/u.test(text)) return;
+
     let code = franc(text, { minLength: 3, only: ['eng','spa','kor'] });
     if (!['eng','spa','kor'].includes(code)) {
         try {
@@ -58,14 +62,12 @@ client.on('messageCreate', async (message) => {
     const codes = ['eng','spa','kor'];
     const dests = codes.filter(c => c !== code);
     const srcName = names[code];
-    const trgNames = dests.map(c => names[c]).join(' and ');
-    const trgKeys  = dests.map(c => map[c]).join(' and ');
 
     const systemPrompt =
         `You are a translator. You will receive text in ${srcName}. ` +
-        `Translate the entire text into ${trgNames}, translating every word or phrase as needed. ` +
-        `Respond with **only** a JSON object with keys "${map[dests[0]]}" and "${map[dests[1]]}", whose values are the full translated text. ` +
-        `Do NOT include any additional commentary.`;
+        `Translate the entire text into ${names[dests[0]]} and ${names[dests[1]]}, translating every word or phrase as needed. ` +
+        `Respond with ONLY a JSON object with keys "${map[dests[0]]}" and "${map[dests[1]]}". ` +
+        `Do NOT include any additional commentary.` ;
 
     let completion;
     try {
