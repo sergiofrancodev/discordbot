@@ -1,4 +1,3 @@
-
 import 'dotenv/config';
 import { Client, GatewayIntentBits } from 'discord.js';
 import { OpenAI } from 'openai';
@@ -6,12 +5,17 @@ import { franc } from 'franc';
 
 const DISCORD_TOKEN  = process.env.DISCORD_TOKEN;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const SERVER_ID      = process.env.SERVER_ID;
+const SERVER_IDS     = process.env.SERVER_IDS; // ahora plural
 
-if (!DISCORD_TOKEN || !OPENAI_API_KEY || !SERVER_ID) {
-    console.error('❌ Missing DISCORD_TOKEN, OPENAI_API_KEY or SERVER_ID in .env');
+if (!DISCORD_TOKEN || !OPENAI_API_KEY || !SERVER_IDS) {
+    console.error('❌ Missing DISCORD_TOKEN, OPENAI_API_KEY or SERVER_IDS in .env');
     process.exit(1);
 }
+
+// parseamos la lista de IDs separadas por coma
+const allowedServers = SERVER_IDS.split(',')
+    .map(id => id.trim())
+    .filter(id => id.length);
 
 const client = new Client({
     intents: [
@@ -24,20 +28,26 @@ const client = new Client({
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 client.once('ready', () => {
-    console.log(`🤖 Bot connected as ${client.user.tag}, server ${SERVER_ID}`);
+    console.log(`🤖 Bot connected as ${client.user.tag}`);
+    console.log(`   Serving servers: ${allowedServers.join(', ')}`);
 });
 
 client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
-    if (!message.guild || message.guild.id !== SERVER_ID) return;
+
+    // ignoramos si no es de uno de los servidores permitidos
+    if (!message.guild || !allowedServers.includes(message.guild.id)) return;
 
     const text = message.content.trim();
     if (!text) return;
 
+    // skip pure links
     if (/^https?:\/\/\S+$/.test(text)) return;
 
+    // skip pure Unicode emojis
     if (/^\p{Extended_Pictographic}+$/u.test(text)) return;
 
+    // skip Discord custom emojis
     if (/^:\w+?:$/.test(text) || /^<a?:\w+:\d+>$/.test(text)) return;
 
     let code = franc(text, { minLength: 3, only: ['eng','spa','kor'] });
@@ -46,7 +56,7 @@ client.on('messageCreate', async (message) => {
             const detect = await openai.chat.completions.create({
                 model: 'gpt-3.5-turbo',
                 messages: [
-                    { role: 'system', content: 'Detect the predominant language of the following text. Answer exactly one of: English, Spanish, or Korean.' },
+                    { role: 'system', content: 'Detect the predominant language: English, Spanish, or Korean.' },
                     { role: 'user',   content: text }
                 ]
             });
@@ -68,9 +78,8 @@ client.on('messageCreate', async (message) => {
 
     const systemPrompt =
         `You are a translator. You will receive text in ${srcName}. ` +
-        `Translate the entire text into ${trgNames}, translating every word or phrase as needed. ` +
-        `Respond with ONLY a JSON object with keys "${map[dests[0]]}" and "${map[dests[1]]}", whose values are the full translated text. ` +
-        `Do NOT include any additional commentary.`;
+        `Translate it into ${trgNames}, every word or phrase. ` +
+        `Respond with only a JSON object with keys "${map[dests[0]]}" and "${map[dests[1]]}".`;
 
     let completion;
     try {
@@ -82,7 +91,7 @@ client.on('messageCreate', async (message) => {
             ]
         });
     } catch {
-        await message.reply('❌ Error translating, please try again later.');
+        await message.reply('❌ Error translating, try again later.');
         return;
     }
 
@@ -90,7 +99,7 @@ client.on('messageCreate', async (message) => {
     try {
         data = JSON.parse(completion.choices[0].message.content);
     } catch {
-        await message.reply('❌ Could not interpret translation response.');
+        await message.reply('❌ Could not interpret translation.');
         return;
     }
 
