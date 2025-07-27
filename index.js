@@ -78,35 +78,34 @@ client.on('messageCreate', async (message) => {
 
     const systemPrompt =
         `You are a translator. You will receive text in ${srcName}. ` +
-        `Translate it into ${trgNames}, every word or phrase. ` +
-        `Respond with only a JSON object with keys "${map[dests[0]]}" and "${map[dests[1]]}".`;
+        `Translate the entire text into ${trgNames}. ` +
+        `Return only a JSON object with keys "${map[dests[0]]}" and "${map[dests[1]]}". ` +
+        `Each key’s value must be a single string with the full translation.`;
 
-    let completion;
-    try {
-        completion = await openai.chat.completions.create({
-            model: 'gpt-3.5-turbo',
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user',   content: text }
-            ]
-        });
-    } catch {
-        await message.reply('❌ Error translating, try again later.');
-        return;
-    }
+    let completion = await openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user',   content: text }
+        ]
+    });
 
     let data;
     try {
         data = JSON.parse(completion.choices[0].message.content);
     } catch {
-        await message.reply('❌ Could not interpret translation.');
-        return;
+        return message.reply('❌ Could not interpret translation.');
     }
 
+    const flatten = v =>
+        typeof v === 'object'
+            ? Object.values(v).join(' ')
+            : v;
+
     let reply = '';
-    if (data.en) reply += `🦅 ${data.en}\n`;
-    if (data.es) reply += `🇪🇸 ${data.es}\n`;
-    if (data.ko) reply += `🇰🇷 ${data.ko}\n`;
+    if (data.en) reply += `🦅 ${flatten(data.en)}\n`;
+    if (data.es) reply += `🇪🇸 ${flatten(data.es)}\n`;
+    if (data.ko) reply += `🇰🇷 ${flatten(data.ko)}\n`;
 
     await message.reply(reply);
 });
