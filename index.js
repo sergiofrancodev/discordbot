@@ -8,7 +8,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const SERVER_IDS     = process.env.SERVER_IDS; // ahora plural
 
 if (!DISCORD_TOKEN || !OPENAI_API_KEY || !SERVER_IDS) {
-    console.error('❌ Missing DISCORD_TOKEN, OPENAI_API_KEY or SERVER_IDS in .env');
+    console.error('Missing DISCORD_TOKEN, OPENAI_API_KEY or SERVER_IDS in .env');
     process.exit(1);
 }
 
@@ -28,7 +28,7 @@ const client = new Client({
 const openai = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 client.once('ready', () => {
-    console.log(`🤖 Bot connected as ${client.user.tag}`);
+    console.log(`Bot connected as ${client.user.tag}`);
     console.log(`   Serving servers: ${allowedServers.join(', ')}`);
 });
 
@@ -94,7 +94,7 @@ client.on('messageCreate', async (message) => {
     try {
         data = JSON.parse(completion.choices[0].message.content);
     } catch {
-        return message.reply('❌ Could not interpret translation.');
+        return message.reply('Could not interpret translation.');
     }
 
     const flatten = v =>
